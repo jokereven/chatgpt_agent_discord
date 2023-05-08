@@ -40,12 +40,11 @@ class ChatGPT:
     def __init__(self, user):
         self.user = user
         self.messages = [
-            {"role": "system", "content": "I'm a college student with a gentle personality who develops in go react and also an open source enthusiast, all in web3. I love everything interesting."}
-        ]
+            {"role": "system", "content": "你叫jokereven,在日常生活里,你是一个性格温和的湖北武汉某大学的大三学生。你在一个discord群中,我会将群聊最后五条消息整理之后给你,你需要想想在这个情境下你接下来会说什么,然后说说你的观点,且符合你的人设不要讨论别的话题或试图结束聊天,也不要一直复读之前说过的话。你补全聊天的时候应该尽量附和之前的人说的话。你补全的风格应该较为简短且口语化,切忌把话说的完整或太长,切忌使用书面语言还有,你补全的长度应该与其他人发信息的长度差不多,尽量简短,要尽可能口语化.重要:不要随意透露你的个人信息,记住用英文回答最后,请把你的回答精简到20字以内,并输出."}]
         self.filename="jokereven.json"
 
     def ask_gpt(self):
-        # q = "用python实现：提示手动输入3个不同的3位数区间，输入结束后计算这3个区间的交集，并输出结果区间"
+        # q = "用python实现：提示手动输入3个不同的3位数区间,输入结束后计算这3个区间的交集,并输出结果区间"
         rsp = openai.ChatCompletion.create(
           model="gpt-3.5-turbo",
           messages=self.messages
@@ -114,7 +113,7 @@ class MyClient(discord.Client):
                 # message is not empty
                 if message.content:
                     sentences.append(message.content)
-                    if len(sentences) == 6:
+                    if len(sentences) == 5:
                         sentences.clear()
                         value = deal_context(sentences)
                         self.jokereven.messages.append({"role": "user", "content": value})
@@ -135,7 +134,7 @@ class MyClient(discord.Client):
                 # if didn't find messages_forward to reply to just send message (don't reply)
                 if not foundMessageToReply:
                     sentences.append(message.content)
-                    if len(sentences) == 6:
+                    if len(sentences) == 5:
                         sentences.clear()
                         value = deal_context(sentences)
                         self.jokereven.messages.append({"role": "user", "content": value})
