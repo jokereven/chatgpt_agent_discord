@@ -13,9 +13,11 @@ load_dotenv()
 
 # 获取变量
 discord_token = os.getenv("DISCORD_TOKEN")
-channelIds_forward  = json.loads(os.getenv("FORWARD"))["forward"]
-channelIds_listen  = json.loads(os.getenv("LISTEN"))["listen"]
+channelIds_forward = json.loads(os.getenv("FORWARD"))["forward"]
+channelIds_listen = json.loads(os.getenv("LISTEN"))["listen"]
 API_KEY = os.getenv("API_KEY")
+
+print('channelIds_listen:', channelIds_listen, 'channelIds_forward:', channelIds_forward)
 
 openai.api_key = API_KEY
 
@@ -88,6 +90,7 @@ class MyClient(discord.Client):
         print(message)
         print("content:", message.content)
         print("type:", message.type)
+        print("sentences.length() ==", len(sentences))
 
         # check if is reply
         replyMessageId = ""
@@ -112,6 +115,7 @@ class MyClient(discord.Client):
                 if message.content:
                     sentences.append(message.content)
                     if len(sentences) == 6:
+                        sentences.clear()
                         value = deal_context(sentences)
                         self.jokereven.messages.append({"role": "user", "content": value})
                         answer = self.jokereven.ask_gpt()
@@ -132,6 +136,7 @@ class MyClient(discord.Client):
                 if not foundMessageToReply:
                     sentences.append(message.content)
                     if len(sentences) == 6:
+                        sentences.clear()
                         value = deal_context(sentences)
                         self.jokereven.messages.append({"role": "user", "content": value})
                         answer = self.jokereven.ask_gpt()
