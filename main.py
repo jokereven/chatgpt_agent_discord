@@ -1,6 +1,7 @@
 # dont use discord.py use the fork `pip install discord.py-self`
 
 import os
+import re
 import json
 import time
 import nltk
@@ -13,6 +14,7 @@ nltk.download('punkt')
 load_dotenv()
 
 # 获取变量
+chat_len = 5
 discord_token = os.getenv("DISCORD_TOKEN")
 channelIds_forward = json.loads(os.getenv("FORWARD"))["forward"]
 channelIds_listen = json.loads(os.getenv("LISTEN"))["listen"]
@@ -34,30 +36,30 @@ def deal_context(sentences):
 
     merged_sentence = ' '.join(sentences)
 
-    # print("========================")
-    # print('merged_sentence:', merged_sentence)
-    # print("========================")
+    print("========================")
+    print('merged_sentence:', merged_sentence)
+    print("========================")
 
-    # return merged_sentence
+    return merged_sentence
 
     # use nltk detail data
-    tokens = nltk.word_tokenize(merged_sentence)
-    detokenized_sentence = nltk.treebank.TreebankWordDetokenizer().detokenize(tokens)
+    # tokens = nltk.word_tokenize(merged_sentence)
+    # detokenized_sentence = nltk.treebank.TreebankWordDetokenizer().detokenize(tokens)
 
-    print("========================")
-    print('detokenized_sentence:', detokenized_sentence)
-    print("========================")
+    # print("========================")
+    # print('detokenized_sentence:', detokenized_sentence)
+    # print("========================")
 
-    return detokenized_sentence
+    # return detokenized_sentence
 
 #  ChatGPT
 class ChatGPT:
     def __init__(self, user):
         self.user = user
         # self.messages = [
-            # {"role": "system", "content": "你叫jokereven,在日常生活里,你是一个性格温和的美国加州某大学的大三学生.并且你是一个go+react开发者,对于开源特别热爱.你的偶像是hux黄玄,你最喜欢的动漫是火影忍者.你在一个discord群中,我会将群聊最后五条消息整理成一句话之后给你,你需要想想在这个情境下你接下来会说什么,然后说说你的观点,且符合你的人设不要讨论别的话题或试图结束聊天,也不要一直复读之前说过的话。你补全聊天的时候应该尽量附和之前的人说的话。你补全的风格应该较为简短且口语化,切忌把话说的完整或太长,切忌使用书面语言还有,你补全的长度应该与其他人发信息的长度差不多,尽量简短,要尽可能口语化.重要:不要随意透露你的个人信息,记住用英文回答最后,请把你的回答精简到20单词以内,并输出."}]
+            # {"role": "system", "content": "你叫jokereven,在日常生活里,你是一个性格温和的美国加州某大学的大三学生,并且你是一个go+react开发者,同时对于开源特别热爱.你的偶像是hux黄玄,你最喜欢的动漫是火影忍者.你在一个discord群中,我会以'A:xxx B:xxx 你:?'的格式输入不全的聊天记录你需要想想在这个情境下你接下来会说什么,然后补充'你:?'中你说的话你补全的话题应该主要与聊天记录的最后三句相关,且符合你的人设不要讨论别的话题或试图结束聊天,也不要一直复读之前说过的话.你补全聊天的时候应该尽量附和之前的人说的话.你补全的风格应该较为简短且口语化,切忌把话说的完整或太长,切忌使用书面语言还有,你补全的长度应该与其他人发信息的长度差不多,尽量简短,要尽可能口语化.重要:不要随意透露你的个人信息.记住用简体英文回答最后,请把你的回答精简到12字以内,并输出."}]
         self.messages = [
-            {"role": "system", "content": "Your name is jokereven, and in your everyday life, you are a gentle junior at a university in California. And you're a go+react developer who loves open source. Your idol is hux Huang Xuan, and your favorite anime is Naruto. You're in a discord group, and I'll give you the last five messages in one sentence. Think about what you would say next in that situation, and then say what you think, and the person you're in line with shouldn't discuss other topics or try to end the conversation, and don't keep rereading everything you've said. When you complete the conversation, you should try to agree with what the previous person said. Your completion style should be short and colloquial, don't make your sentences complete or too long, don't use written language and the length of your completion should be about the same as the length of the other person's message, keep it short and colloquial. Important: Don't give out personal information at will. Remember to answer in English. Finally, please reduce your answers to 20 words or less."}]
+            {"role": "system", "content": "Your name is jokereven. In everyday life, you are a gentle junior at a university in California, and you are a go+react developer who loves open source. Your idol is hux Huang Xuan, and your favorite anime is Naruto. If you're in A discord group, I'll start with 'A:xxx B:xxx you:? You need to think about what you would say next in this situation and then add 'you:? The topics you complete should be mainly related to the last three sentences of the conversation, and the person who meets you should not discuss other topics or try to end the conversation, and don't keep rereading what you said. When you complete the conversation, you should try to agree with what the previous person said. Your completion style should be short and colloquial, don't make your sentences complete or too long, don't use written language and the length of your completion should be about the same as the length of the other person's message, keep it short and colloquial. Important: Don't give out your personal information. Remember to answer in Simplified English. Finally, please reduce your answer to 12 words or less and print it."}]
         self.filename="jokereven.json"
 
     def ask_gpt(self):
@@ -129,13 +131,14 @@ class MyClient(discord.Client):
             channel_forward = self.get_channel(int(channelId))
 
             # check if is not reply
-            if replyMessageId == "":
+            if replyMessageId == "" and message.author.name != 'jokereven':
                 # is not response just send message
                 # message is not empty
                 if message.content:
-                    sentences.append(message.content)
+                    sentences.append(f"{message.author.name}:{message.content}")
                     print("sentences:", sentences)
-                    if len(sentences) == 5:
+                    if len(sentences) == chat_len:
+                        sentences.append("you:?")
                         value = deal_context(sentences)
                         self.jokereven.messages.append({"role": "user", "content": value})
                         sentences.clear()
@@ -148,7 +151,15 @@ class MyClient(discord.Client):
                         else:
                             gpt_call_counter += 1
                             answer = self.jokereven.ask_gpt()
-                            await channel_forward.send(content=answer)
+                            print('answer:', answer)
+                            joke = re.split(r'[.!?;:]+\s*', answer)
+                            joke = [s.strip() for s in joke]
+                            for s in joke:
+                                print('s:', s)
+                                if not s or 'jokereven' in s:
+                                    continue
+                                time.sleep(len(s)/8)
+                                await channel_forward.send(content=s)
                             gpt_call_timestamp = time.time()
             else :
                 # is reply, search for message
@@ -164,9 +175,10 @@ class MyClient(discord.Client):
 
                 # if didn't find messages_forward to reply to just send message (don't reply)
                 if not foundMessageToReply:
-                    sentences.append(message.content)
+                    sentences.append(f"{message.author.name}:{message.content}")
                     print("sentences:", sentences)
-                    if len(sentences) == 5:
+                    if len(sentences) == chat_len:
+                        sentences.append("you:?")
                         value = deal_context(sentences)
                         self.jokereven.messages.append({"role": "user", "content": value})
                         sentences.clear()
@@ -179,7 +191,15 @@ class MyClient(discord.Client):
                         else:
                             gpt_call_counter += 1
                             answer = self.jokereven.ask_gpt()
-                            await channel_forward.send(content=answer)
+                            print('answer:', answer)
+                            joke = re.split(r'[.!?]+\s*', answer)
+                            joke = [s.strip() for s in joke]
+                            for s in joke:
+                                print('s:', s)
+                                if not s or 'jokereven' in s:
+                                    continue
+                                time.sleep(len(s)/8)
+                                await channel_forward.send(content=s)
                             gpt_call_timestamp = time.time()
 
 MyClient().run(discord_token)
