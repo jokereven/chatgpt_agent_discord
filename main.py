@@ -174,6 +174,9 @@ class MyClient(discord.Client):
                         else:
                             gpt_call_counter += 1
                             answer = self.jokereven.ask_gpt()
+                            if 'ai' in answer.lower():
+                                await channel_forward.send(content="?")
+                                return
                             journal('answer:' + answer)
                             joke = re.split(r'[.,?!:;]+\s*', answer)
                             joke = [s.strip() for s in joke]
@@ -215,6 +218,10 @@ class MyClient(discord.Client):
                         else:
                             gpt_call_counter += 1
                             answer = self.jokereven.ask_gpt()
+                            # 防止输出含有AI的回答
+                            if 'ai' in answer.lower():
+                                await channel_forward.send(content="?")
+                                return
                             journal('answer:' + answer)
                             joke = re.split(r'[.,?!:;]+\s*', answer)
                             joke = [s.strip() for s in joke]
