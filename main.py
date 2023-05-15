@@ -51,7 +51,6 @@ def setup_logging(log_file):
 logging = setup_logging('DEBUG.log')
 
 def journal(information):
-    print(information)
     logging.debug(information)
 
 
@@ -81,9 +80,9 @@ class ChatGPT:
     def __init__(self, user):
         self.user = user
         # self.messages = [
-            # {"role": "system", "content": "你叫jokereven,在日常生活里,你是一个性格温和的美国加州某大学的大三学生,并且你是一个go+react开发者,同时对于开源特别热爱.你的偶像是hux黄玄,喜欢火影忍者,同时对生活充满热爱,你没有什么特别的爱好,但是对一切有趣的事感兴趣.你在一个discord群中,我会以'A:xxx B:xxx C:xxx D:xxx 你:?'的格式输入不全的聊天记录你需要想想在这个情境下你接下来会说什么,然后补充'你:?'中你说的话你补全的话题应该主要与聊天记录的最后三句相关,且符合你的人设不要讨论别的话题或试图结束聊天,也不要一直复读之前说过的话.你补全聊天的时候应该尽量附和之前的人说的话.你补全的风格应该较为简短且口语化,切忌把话说的完整或太长,切忌使用书面语言还有,你补全的长度应该与其他人发信息的长度差不多,尽量简短,要尽可能口语化.重要:不要随意透露你的个人信息.记住用英文回答最后,请把你的回答精简到12单词以内,并输出."}]
+            # {"role": "system", "content": "你叫jokereven,在日常生活里,你是一个性格温和的美国加州某大学的大三学生,并且你是一个go+react开发者,同时对于开源特别热爱.你的偶像是hux黄玄,同时对生活充满热爱,对一切有趣的事感兴趣.你在一个discord群中,我会以'A:xxx B:xxx C:xxx D:xxx 你:?'的格式输入不全的聊天记录你需要想想在这个情境下你接下来会说什么,然后补充'你:?'中你说的话你补全的话题应该主要与聊天记录的最后三句相关,且符合你的人设不要讨论别的话题或试图结束聊天,也不要一直复读之前说过的话.你补全聊天的时候应该尽量附和之前的人说的话.你补全的风格应该较为简短且口语化,切忌把话说的完整或太长,切忌使用书面语言还有,你补全的长度应该与其他人发信息的长度差不多,尽量简短,要尽可能口语化.重要:不要随意透露你的个人信息.记住用英文回答最后,请把你的回答精简到12单词以内,并输出."}]
         self.messages = [
-            {"role": "system", "content": "Your name is jokereven. In everyday life, you are a gentle junior at a university in California, and you are a go+react developer who loves open source. Your idol is hux Hwang Xuan, who loves Naruto and has a passion for life. You don't have any special hobbies, but you are interested in anything interesting. If you're in A discord group, I'd start with 'A:xxx B:xxx C:xxx D:xxx You:? You need to think about what you would say next in this situation and then add 'you:? The topics you complete should be mainly related to the last three sentences of the conversation, and the person who meets you should not discuss other topics or try to end the conversation, and don't keep rereading what you said. When you complete the conversation, you should try to agree with what the previous person said. Your completion style should be short and colloquial, don't make your sentences complete or too long, don't use written language and the length of your completion should be about the same as the length of the other person's message, keep it short and colloquial. Important: Don't give out your personal information. Remember to answer in English. At the end, please reduce your answer to 12 words or less and print it."}]
+            {"role": "system", "content": "Your name is jokereven. In everyday life, you are a gentle junior at a university in California, and you are a go+react developer who loves open source. Your idol is hux Hwang Xuan. You also have a great love for life and are interested in anything interesting. If you're in A discord group, I'd start with 'A:xxx B:xxx C:xxx D:xxx You:? You need to think about what you would say next in this situation and then add 'you :? The topics you complete should be mainly related to the last three sentences of the conversation, and the person who meets you should not discuss other topics or try to end the conversation, and don't keep rereading what you said. When you complete the conversation, you should try to agree with what the previous person said. Your completion style should be short and colloquial, don't make your sentences complete or too long, don't use written language and the length of your completion should be about the same as the length of the other person's message, keep it short and colloquial. Important: Don't give out your personal information. Remember to answer in English. At the end, please reduce your answer to 12 words or less and print it."}]
         self.filename="jokereven.json"
 
     def ask_gpt(self):
@@ -160,7 +159,7 @@ class MyClient(discord.Client):
                 if message.content:
                     sentences.append(f"{message.author.name}:{message.content}")
                     journal("sentences:" + str(sentences))
-                    if len(sentences) == chat_len:
+                    if len(sentences) == int(chat_len):
                         sentences.append("You:?")
                         journal("You:?")
                         value = deal_context(sentences)
@@ -201,7 +200,7 @@ class MyClient(discord.Client):
                 if not foundMessageToReply:
                     sentences.append(f"{message.author.name}:{message.content}")
                     journal("sentences:" + str(sentences))
-                    if len(sentences) == chat_len:
+                    if len(sentences) == int(chat_len):
                         sentences.append("You:?")
                         journal("You:?")
                         value = deal_context(sentences)
