@@ -5,3 +5,7 @@ references:
 https://juejin.cn/post/7206511128277024823
 
 https://github.com/Ramzi-Sah/discordMonitorChannel-selfBot
+
+TODO 对于这几天测试的问题分析;
+1. content 内容过多!
+2. 把自己发的话读取了!

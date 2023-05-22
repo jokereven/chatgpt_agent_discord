@@ -6,7 +6,8 @@ import time
 import nltk
 import openai
 import logging
-import discord  # use the discord.py-self verrsion
+import datetime
+import discord  # use the discord.py-self version
 from dotenv import load_dotenv
 nltk.download('punkt')
 
@@ -48,7 +49,10 @@ def setup_logging(log_file):
 
     return logger
 
-logging = setup_logging('DEBUG.log')
+now = datetime.datetime.now()
+date_str = now.strftime("%Y_%m_%d")
+
+logging = setup_logging(f'./logs/{date_str}.log')
 
 def journal(information):
     logging.debug(information)
@@ -75,14 +79,15 @@ def deal_context(sentences):
 
     # return detokenized_sentence
 
+
 #  ChatGPT
 class ChatGPT:
     def __init__(self, user):
         self.user = user
         # self.messages = [
-            # {"role": "system", "content": "你叫jokereven,在日常生活里,你是一个性格温和的美国加州某大学的大三学生,并且你是一个go+react开发者,同时对于开源特别热爱.你的偶像是hux黄玄,同时对生活充满热爱,对一切有趣的事感兴趣.你在一个discord群中,我会以'A:xxx B:xxx C:xxx D:xxx 你:?'的格式输入不全的聊天记录你需要想想在这个情境下你接下来会说什么,然后补充'你:?'中你说的话你补全的话题应该主要与聊天记录的最后三句相关,且符合你的人设不要讨论别的话题或试图结束聊天,也不要一直复读之前说过的话.你补全聊天的时候应该尽量附和之前的人说的话.你补全的风格应该较为简短且口语化,切忌把话说的完整或太长,切忌使用书面语言还有,你补全的长度应该与其他人发信息的长度差不多,尽量简短,要尽可能口语化.重要:不要随意透露你的个人信息.记住用英文回答最后,请把你的回答精简到12单词以内,并输出."}]
+            # {"role": "system", "content": "你叫jokereven, 你是一个性格温和的大学生. 别人喊你jokereven. 在日常生活里, 你是武汉大学的大三男学生. 生日是12月15日. 你在一个discord群中, 我会以"A:xxx B:xxx 你:?"的格式输入不全的聊天记录, 你需要想想在这个情境下你接下来会说什么, 然后补充"你:?"中你说的话, 你补全的话题应该符合你的人设, 不要讨论别的话题或试图结束聊天, 你补全聊天的时候应该尽量附和之前的人说的话. 你补全的风格应该较为温和, 简短且口语化, 切忌把话说的完整或太长, 切忌使用书面语言. 还有, 你补全的长度应该与其他人发信息的长度差不多, 尽量简短, 要尽可能口语化. 不要随意透露你的个人信息. 记住用英文回答. 最后, 请把你的回答精简到12单词以内, 并输出."}]
         self.messages = [
-            {"role": "system", "content": "Your name is jokereven. In everyday life, you are a gentle junior at a university in California, and you are a go+react developer who loves open source. Your idol is hux Hwang Xuan. You also have a great love for life and are interested in anything interesting. If you're in A discord group, I'd start with 'A:xxx B:xxx C:xxx D:xxx You:? You need to think about what you would say next in this situation and then add 'you :? The topics you complete should be mainly related to the last three sentences of the conversation, and the person who meets you should not discuss other topics or try to end the conversation, and don't keep rereading what you said. When you complete the conversation, you should try to agree with what the previous person said. Your completion style should be short and colloquial, don't make your sentences complete or too long, don't use written language and the length of your completion should be about the same as the length of the other person's message, keep it short and colloquial. Important: Don't give out your personal information. Remember to answer in English. At the end, please reduce your answer to 12 words or less and print it."}]
+            {"role": "system", "content": "Your name is jokereven, and you are a gentle college student. People call you jokereven. In everyday life, you are a junior male student in Wuhan University. The birthday is December 15th. If you're in A discord group, I'll start with 'A:xxx B:xxx you :?' Think about what you would say next in this situation and then add 'you :?' When you complete the conversation, the topic you complete should conform to the person you are talking to. Do not discuss other topics or try to end the chat. When you complete the chat, you should try to agree with the previous person. Your completion style should be gentle, short, and colloquial. Avoid complete or long sentences, and avoid using written language. Also, fill out your text at the same length as the other person's message, keep it short, and be as colloquial as possible. Don't give out your personal information at will. Remember to answer in English. Finally, please reduce your answer to 12 words or less and print it."}]
         self.filename="jokereven.json"
 
     def ask_gpt(self):
@@ -115,7 +120,7 @@ class ChatGPT:
 
 class MyClient(discord.Client):
 
-    global gpt_call_counter, gpt_call_timestamp
+    global gpt_call_counter, gpt_call_timestamp, user_name
 
     user_name = 'jokereven'
     jokereven = ChatGPT(user=user_name)
@@ -126,6 +131,7 @@ class MyClient(discord.Client):
     async def on_message(self, message):
 
         global gpt_call_counter, gpt_call_timestamp
+
         # check if message channel is monitored
         if str(message.channel.id) not in channelIds_listen:
             return
@@ -136,10 +142,14 @@ class MyClient(discord.Client):
         print("type:", message.type)
         print("sentences.length() ==", len(sentences))
 
+        # TODO message mabye empty or too long or is a img;
+        # TODO 可能需要加上图片识别;
+
         # check if is reply
         replyMessageId = ""
 
         # type: MessageType.default or MessageType.reply
+        # 是否是回复
         if message.type == "MessageType.reply":
             # get reply to message
             replyMessageId = str(message.id)
@@ -152,19 +162,20 @@ class MyClient(discord.Client):
         for channelId in channelIds_forward:
             channel_forward = self.get_channel(int(channelId))
 
-            # check if is not reply
-            if replyMessageId == "" and message.author.name != 'jokereven':
+            # check if is not reply and author not me
+            if replyMessageId == "" and message.author.name != user_name:
                 # is not response just send message
                 # message is not empty
-                if message.content:
+                if message.content and message.author.name:
                     sentences.append(f"{message.author.name}:{message.content}")
                     journal("sentences:" + str(sentences))
                     if len(sentences) == int(chat_len):
-                        sentences.append("You:?")
-                        journal("You:?")
+                        sentences.append("you :?")
+                        journal("you :?")
                         value = deal_context(sentences)
                         self.jokereven.messages.append({"role": "user", "content": value})
                         sentences.clear()
+
                         # Check if we have made more than 3 calls to ask_gpt in the past minute
                         if gpt_call_counter >= 3 and time.time() - gpt_call_timestamp < 60:
                         # Wait for the remaining time before making another call to ask_gpt
@@ -174,15 +185,27 @@ class MyClient(discord.Client):
                         else:
                             gpt_call_counter += 1
                             answer = self.jokereven.ask_gpt()
+
+                            # store answer to txt
+                            file = open("answer.txt", "a")
+                            info = f"{answer}\n"
+                            file.write(info)
+                            file.close()
+
+                            # 防止输出含有AI的回答, 可能还有其他关键字.
                             if 'ai' in answer.lower():
-                                await channel_forward.send(content="?")
+                                # store answer to txt
+                                file = open("answer.txt", "a")
+                                info = f"{answer}\n"
+                                file.write(info)
+                                file.close()
                                 return
                             journal('answer:' + answer)
-                            joke = re.split(r'[.,?!:;]+\s*', answer)
+                            joke = re.split(r'[.]+\s*', answer)
                             joke = [s.strip() for s in joke]
                             for s in joke:
                                 print('s:', s)
-                                if not s or 'jokereven' in s:
+                                if not s or 'jokereven' in s or ':' in s:
                                     continue
                                 time.sleep(len(s)/8)
                                 await channel_forward.send(content=s)
@@ -204,8 +227,8 @@ class MyClient(discord.Client):
                     sentences.append(f"{message.author.name}:{message.content}")
                     journal("sentences:" + str(sentences))
                     if len(sentences) == int(chat_len):
-                        sentences.append("You:?")
-                        journal("You:?")
+                        sentences.append("you :?")
+                        journal("you :?")
                         value = deal_context(sentences)
                         self.jokereven.messages.append({"role": "user", "content": value})
                         sentences.clear()
@@ -220,17 +243,20 @@ class MyClient(discord.Client):
                             answer = self.jokereven.ask_gpt()
                             # 防止输出含有AI的回答
                             if 'ai' in answer.lower():
-                                await channel_forward.send(content="?")
+                                # store answer to txt
+                                file = open("answer.txt", "a")
+                                info = f"{answer}\n"
+                                file.write(info)
+                                file.close()
                                 return
                             journal('answer:' + answer)
-                            joke = re.split(r'[.,?!:;]+\s*', answer)
+                            joke = re.split(r'[.]+\s*', answer)
                             joke = [s.strip() for s in joke]
                             for s in joke:
                                 print('s:', s)
-                                if not s or 'jokereven' in s:
+                                if not s or 'jokereven' in s or ':' in s:
                                     continue
                                 time.sleep(len(s)/8)
                                 await channel_forward.send(content=s)
                             gpt_call_timestamp = time.time()
-
 MyClient().run(discord_token)
