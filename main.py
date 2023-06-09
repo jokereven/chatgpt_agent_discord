@@ -49,6 +49,7 @@ def setup_logging(log_file):
 
     return logger
 
+# setup_logging store in where
 now = datetime.datetime.now()
 date_str = now.strftime("%Y_%m_%d")
 
@@ -59,9 +60,13 @@ def journal(information):
 
 
 # use nltk to deal the context
-def deal_context(sentences):
+def deal_context(sentences, max_length=60):
 
-    merged_sentence = ' '.join(sentences)
+    # 防止输入过多
+    if len(sentences) > max_length:
+        merged_sentence = ' '.join(sentences[:max_length] + '...')
+    else:
+        merged_sentence = ' '.join(sentences)
 
     journal("========================")
     journal('merged_sentence:' + merged_sentence)
@@ -85,9 +90,9 @@ class ChatGPT:
     def __init__(self, user):
         self.user = user
         # self.messages = [
-            # {"role": "system", "content": "你叫jokereven, 你是一个性格温和的大学生. 别人喊你jokereven. 在日常生活里, 你是武汉大学的大三男学生. 生日是12月15日. 你在一个discord群中, 我会以"A:xxx B:xxx 你:?"的格式输入不全的聊天记录, 你需要想想在这个情境下你接下来会说什么, 然后补充"你:?"中你说的话, 你补全的话题应该符合你的人设, 不要讨论别的话题或试图结束聊天, 你补全聊天的时候应该尽量附和之前的人说的话. 你补全的风格应该较为温和, 简短且口语化, 切忌把话说的完整或太长, 切忌使用书面语言. 还有, 你补全的长度应该与其他人发信息的长度差不多, 尽量简短, 要尽可能口语化. 不要随意透露你的个人信息. 记住用英文回答. 最后, 请把你的回答精简到12单词以内, 并输出."}]
+            # {"role": "system", "content": "你叫jokereven,你是一个性格温和的大学生.别人喊你joker.在日常生活里,你是武汉大学的大三男学生.生日是12月15日.你在一个discord群中,我会以"A:xxx B:xxx 你:?"的格式输入不全的聊天记录,你需要想想在这个情境下你接下来会说什么,然后补充"你:?"中你说的话,你补全的话题应该符合你的人设,不要讨论别的话题或试图结束聊天,你补全聊天的时候应该尽量附和之前的人说的话.你补全的风格应该较为温和,简短且口语化,切忌把话说的完整或太长,切忌使用书面语言.还有,你补全的长度应该与其他人发信息的长度差不多,尽量简短,要尽可能口语化.不要随意透露你的个人信息.记住用英文回答.最后,请把你的回答精简到12个单词以内,并输出."}]
         self.messages = [
-            {"role": "system", "content": "Your name is jokereven, and you are a gentle college student. People call you jokereven. In everyday life, you are a junior male student in Wuhan University. The birthday is December 15th. If you're in A discord group, I'll start with 'A:xxx B:xxx you :?' Think about what you would say next in this situation and then add 'you :?' When you complete the conversation, the topic you complete should conform to the person you are talking to. Do not discuss other topics or try to end the chat. When you complete the chat, you should try to agree with the previous person. Your completion style should be gentle, short, and colloquial. Avoid complete or long sentences, and avoid using written language. Also, fill out your text at the same length as the other person's message, keep it short, and be as colloquial as possible. Don't give out your personal information at will. Remember to answer in English. Finally, please reduce your answer to 12 words or less and print it."}]
+            {"role": "system", "content": "Your name is jokereven, and you are a gentle college student. People call you joker. In daily life, you are a junior male student at Wuhan University. His birthday is December 15th. If you're in A discord group, I'll start with 'A:xxx B:xxx you :?' To type incomplete chat logs, you need to think about what you would say next in the situation and then add 'you :?' When you are talking, the topic you are completing should fit your person. Don't discuss other topics or try to end the conversation. When you complete the conversation, you should try to agree with what the previous person said. Your completion style should be gentle, short, and colloquial. Do not complete or go on too long. Do not use written language. Also, your completion should be about the same length as the other person's message, keep it short, and be as colloquial as possible. Don't give out your personal information freely. Remember to answer in English. Finally, please reduce your answer to 12 words or less and print it."}]
         self.filename="jokereven.json"
 
     def ask_gpt(self):
@@ -98,6 +103,7 @@ class ChatGPT:
         return rsp.get("choices")[0]["message"]["content"]
 
 
+    # write_to_json store in where
     def write_to_json(self):
         try:
             # file exist
@@ -162,9 +168,17 @@ class MyClient(discord.Client):
         for channelId in channelIds_forward:
             channel_forward = self.get_channel(int(channelId))
 
-            # check if is not reply and author not me
+            # check if is not reply and author not me,  不是回复且不是自己发的
             if replyMessageId == "" and message.author.name != user_name:
                 # is not response just send message
+                # 当消息中含有 ai 或者 bot 的时候, 不添加, 但是记录到txt
+                if "ai" in message.content.lower() or "bot" not in message.content.lower():
+                    # store answer to txt
+                    file = open("doubt.txt", "a")
+                    info = f"{message.content}\n"
+                    file.write(info)
+                    file.close()
+                    continue
                 # message is not empty
                 if message.content and message.author.name:
                     sentences.append(f"{message.author.name}:{message.content}")
@@ -176,7 +190,7 @@ class MyClient(discord.Client):
                         self.jokereven.messages.append({"role": "user", "content": value})
                         sentences.clear()
 
-                        # Check if we have made more than 3 calls to ask_gpt in the past minute
+                        # Check if we have made more than 3 calls to ask_gpt in the past minute, 一分钟三次的限制
                         if gpt_call_counter >= 3 and time.time() - gpt_call_timestamp < 60:
                         # Wait for the remaining time before making another call to ask_gpt
                             time.sleep(60 - (time.time() - gpt_call_timestamp))
@@ -192,11 +206,11 @@ class MyClient(discord.Client):
                             file.write(info)
                             file.close()
 
-                            # 防止输出含有AI的回答, 可能还有其他关键字.
-                            if 'ai' in answer.lower():
+                            # 防止输出含有AI or Bot的回答, 可能还有其他关键字.
+                            if 'ai' in answer.lower() or 'bot' in answer.lower():
                                 # store answer to txt
-                                file = open("answer.txt", "a")
-                                info = f"{answer}\n"
+                                file = open("answer_ai_bot.txt", "a")
+                                info = f"{message.content}\n"
                                 file.write(info)
                                 file.close()
                                 return
@@ -205,9 +219,9 @@ class MyClient(discord.Client):
                             joke = [s.strip() for s in joke]
                             for s in joke:
                                 print('s:', s)
-                                if not s or 'jokereven' in s or ':' in s:
+                                if not s or 'jokereven' in s:
                                     continue
-                                time.sleep(len(s)/8)
+                                time.sleep(len(s)/16)
                                 await channel_forward.send(content=s)
                             gpt_call_timestamp = time.time()
             else :
@@ -241,10 +255,10 @@ class MyClient(discord.Client):
                         else:
                             gpt_call_counter += 1
                             answer = self.jokereven.ask_gpt()
-                            # 防止输出含有AI的回答
-                            if 'ai' in answer.lower():
+                            # 防止输出含有AI or Bot的回答, 可能还有其他关键字.
+                            if 'ai' in answer.lower() or 'bot' in answer.lower():
                                 # store answer to txt
-                                file = open("answer.txt", "a")
+                                file = open("answer_ai_bot.txt", "a")
                                 info = f"{answer}\n"
                                 file.write(info)
                                 file.close()
@@ -254,9 +268,9 @@ class MyClient(discord.Client):
                             joke = [s.strip() for s in joke]
                             for s in joke:
                                 print('s:', s)
-                                if not s or 'jokereven' in s or ':' in s:
+                                if not s or 'jokereven' in s:
                                     continue
-                                time.sleep(len(s)/8)
+                                time.sleep(len(s)/16)
                                 await channel_forward.send(content=s)
                             gpt_call_timestamp = time.time()
 MyClient().run(discord_token)
